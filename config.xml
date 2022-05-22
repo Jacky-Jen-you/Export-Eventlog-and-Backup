@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <BackupFolderList>
+      <Path>.\Test\TestFolderA</Path>
+      <Path>.\Test\TestFolderB</Path>
+  </BackupFolderList>
+  <BackupFileList>
+      <Path>.\Test\TestFileA.txt</Path>
+      <Path>.\Test\TestFileB.txt</Path>
+  </BackupFileList>
+</Configuration>

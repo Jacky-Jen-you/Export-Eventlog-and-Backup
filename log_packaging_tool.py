@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import win_eventlog
+import xml.etree.ElementTree as ET
 
 
 def get_current_time():
@@ -12,18 +13,55 @@ def get_current_time():
 
 
 def get_config():
-    if not os.path.isfile('config.json'):
-        print('Config.json is missing !!!')
+    config_name = 'config.xml'
+    backup_folder_list = []
+    backup_file_list = []
+    ret = True
 
-        return None
+    if not os.path.exists(config_name):
+        ret = False
+        print('config.xml is missing.')
 
-    with open('config.json') as json_file:
-        data = json.load(json_file)
+    try:
+        tree = ET.parse(config_name)
+        root = tree.getroot()
+    except:
+        ret = False
+        print('Open config.xml fail')
 
-    return data
+    if ret:
+        for element in root.find('BackupFolderList'):
+            if element.tag == 'Path':
+                path = element.text
+
+                if os.path.exists(path) and os.path.isdir(path):
+                    backup_folder_list.append(path)
+                else:
+                    ret = False
+                    print(f'Folder path "{path}" is not exist, please check the "BackupFolderList" path in the config.xml')
+                    break
+
+    if ret:
+        for element in root.find('BackupFileList'):
+            if element.tag == 'Path':
+                path = element.text
+
+                if os.path.exists(path) and os.path.isfile(path):
+                    backup_file_list.append(path)
+                else:
+                    ret = False
+                    print(f'File path "{path}" is not exist, please check the "BackupFileList" path in the config.xml')
+                    break
+
+    return ret, backup_folder_list, backup_file_list
 
 
 def main():
+    ret, backup_folder_list, backup_file_list = get_config()
+
+    if not ret:
+        return
+
     output_dir = os.path.join(os.getcwd(), 'output')
     temp_dir = os.path.join(output_dir, 'Log')
 
@@ -46,25 +84,23 @@ def main():
 
             return False
 
-    config = get_config()
-
     # 2. copy folder
-    for folder_path in config['FolderList']:
+    for folder_path in backup_folder_list:
         if os.path.isdir(folder_path):
             print(f'Copy folder : {folder_path}')
             shutil.copytree(folder_path, os.path.join(temp_dir, 'Folders', os.path.basename(folder_path)))
         else:
-            print(f'Folder path "{folder_path}" is not exist, please check the "FolderList" path in the config.json')
+            print(f'Folder path "{folder_path}" is not exist, please check the "BackupFolderList" path in the config.xml')
 
             return
 
     # 3. copy file
-    for file_path in config['FileList']:
+    for file_path in backup_file_list:
         if os.path.isfile(file_path):
             print(f'Copy file : {file_path}')
             shutil.copyfile(file_path, os.path.join(temp_dir, 'Files', os.path.basename(file_path)))
         else:
-            print(f'File path "{file_path}" is not exist, please check the "FileList" path in the config.json')
+            print(f'File path "{file_path}" is not exist, please check the "BackupFileList" path in the config.xml')
 
             return
 
